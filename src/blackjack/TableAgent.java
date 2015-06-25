@@ -24,6 +24,7 @@ Boston, MA  02111-1307, USA.
 
 //package examples.bookTrading;
 
+import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.*;
 import jade.lang.acl.ACLMessage;
@@ -39,8 +40,8 @@ public class TableAgent extends Agent {
 
 	private static final long serialVersionUID = 1L;
 	private int seats;
-	private DealerAgent dealer;
-	private List<PlayerAgent> players;
+	private AID dealer;
+	private List<AID> players;
 	
 
 	// Put agent initializations here
@@ -64,8 +65,21 @@ public class TableAgent extends Agent {
 		catch (FIPAException fe) {
 			fe.printStackTrace();
 		}
+		players = new ArrayList<AID>();
 		
 		addBehaviour(new newPlayer());
+	}
+	
+	private class ListPlayers extends OneShotBehaviour {
+		private static final long serialVersionUID = 1L;
+		
+		public void action() {
+			System.out.println("listando os players: ");
+			for(int i = 0; i < players.size(); i++)
+			{
+				System.out.println(players.get(i).getLocalName());
+			}
+		}
 	}
 	
 	private class newPlayer extends CyclicBehaviour {
@@ -73,11 +87,44 @@ public class TableAgent extends Agent {
 		private static final long serialVersionUID = 1L;
 		
 		public void action() {
-			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.CFP);
+			MessageTemplate mt = MessageTemplate.and(MessageTemplate.MatchPerformative(ACLMessage.CFP), 
+					MessageTemplate.MatchConversationId("place-request"));
 			ACLMessage msg = myAgent.receive(mt);
+			
 			if(msg != null)
 			{
-				System.out.println("Recebendo mesnsagem... " + msg.getContent());
+				//ACLMessage reply = msg.createReply();
+				//reply.setContent(msg.getContent());
+				System.out.println("Recebendo mensagem... " + msg.getContent());
+				System.out.println("Numero de jogadores: " + players.size());
+				ACLMessage reply = msg.createReply();
+				if(players.size() < 5)
+				{
+					reply.setPerformative(ACLMessage.CONFIRM);
+					reply.setContent("available");
+				}
+				else
+				{
+					reply.setPerformative(ACLMessage.REFUSE);
+					reply.setContent("not-available");
+				}
+				myAgent.send(reply);
+				
+			}
+			else {
+				MessageTemplate mt2 = MessageTemplate.and(MessageTemplate.MatchPerformative(ACLMessage.INFORM), 
+						MessageTemplate.MatchConversationId("occupying-place"));
+				ACLMessage newReply = myAgent.receive(mt2);
+				
+				if(newReply != null)
+				{
+					players.add(newReply.getSender());
+					addBehaviour(new ListPlayers());
+				}
+				else
+				{
+					block();
+				}
 			}
 		}
 	}
