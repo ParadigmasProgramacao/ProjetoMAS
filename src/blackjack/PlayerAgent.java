@@ -80,6 +80,18 @@ public class PlayerAgent extends Agent {
 					if(agents.length > 0)
 					{
 						System.out.println(myAgent.getLocalName() + " found a table");
+						
+						ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+						cfp.setContent("place");
+						cfp.setConversationId("place-request");
+						cfp.setReplyWith("cfp"+System.currentTimeMillis());
+						//Enviar mensagem para as mesas ver se possui lugar para sentar
+						for(int i = 0; i <= agents.length ; i++)
+						{
+							cfp.addReceiver(agents[i]);
+							myAgent.send(cfp);
+							cfp.removeReceiver(agents[i]);
+						}
 					}
 				}
 				catch (FIPAException fe) {
