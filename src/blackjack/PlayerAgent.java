@@ -25,41 +25,35 @@ Boston, MA  02111-1307, USA.
 //package examples.bookTrading;
 
 import jade.core.Agent;
+import jade.core.AID;
 import jade.core.behaviours.*;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.domain.DFService;
+import jade.domain.DFSubscriber;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 
 import java.util.*;
 
-public class DealerAgent extends Agent {
-	/**
-	 * 
-	 */
+import examples.yellowPages.DFSearchAgent;
+import examples.yellowPages.DFSubscribeAgent;
+
+public class PlayerAgent extends Agent {
+	
 	private static final long serialVersionUID = 1L;
-	// The deck of cards
-	private Deck deck;
-	// The GUI by means of which the user can add books in the catalogue
-	private DealerGui myGui;
+	private AID[] agents;
 
 	// Put agent initializations here
 	protected void setup() {
-		// Create the catalogue
-		deck = new Deck();
-
-		// Create and show the GUI 
-		//myGui = new DealerGui(this);
-		//myGui.showGui();
 
 		// Register the dealer service in the yellow pages
 		DFAgentDescription dfd = new DFAgentDescription();
 		dfd.setName(getAID());
 		ServiceDescription sd = new ServiceDescription();
 		sd.setType("blackjack");
-		sd.setName("dealer");
+		sd.setName("player");
 		dfd.addServices(sd);	
 		try {
 			DFService.register(this, dfd);
@@ -68,14 +62,33 @@ public class DealerAgent extends Agent {
 			fe.printStackTrace();
 		}
 		
-		printDeck();
+		addBehaviour(new TickerBehaviour(this, 5000) {
+
+			private static final long serialVersionUID = 1L;
+
+			protected void onTick() {
+				// Update the list of seller agents
+				DFAgentDescription template = new DFAgentDescription();
+				ServiceDescription sd = new ServiceDescription();
+				sd.setType("blackjack");
+				sd.setName("table");
+				template.addServices(sd);
+				try {
+					DFAgentDescription[] result = DFService.search(myAgent, template); 
+					agents = new AID[result.length];
+					
+					if(agents.length > 0)
+					{
+						System.out.println(myAgent.getLocalName() + " found a table");
+					}
+				}
+				catch (FIPAException fe) {
+					fe.printStackTrace();
+				}
+			}
+		} );
 		
-
-		// Add the behaviour serving queries from buyer agents
-		// Servidor de Requisi��es de Ofertas
-
-		// Add the behaviour serving purchase orders from buyer agents
-		// Servidor de Pedidos de Compras
+		
 	}
 
 	/**
@@ -89,19 +102,7 @@ public class DealerAgent extends Agent {
 	// Servidor de Requisi��es de Ofertas
 	//FIPA PROTOCOLS: http://www.fipa.org/specs/fipa00030/
 	
-	public void printDeck() {
-		addBehaviour(new OneShotBehaviour() {
-
-			private static final long serialVersionUID = 1L;
-
-			public void action() {
-				//catalogue.put(title, new Integer(price));
-				deck.printDeck();
-			}
-		} );
-	}
-	
-	private class OfferRequestsServer extends CyclicBehaviour {
+	private class findTable extends CyclicBehaviour {
 
 		private static final long serialVersionUID = 1L;
 
@@ -130,63 +131,8 @@ public class DealerAgent extends Agent {
 				block();
 			}
 		}
-	}  // End of inner class OfferRequestsServer
-
-	/**
-	   Inner class PurchaseOrdersServer.
-	   This is the behaviour used by Book-seller agents to serve incoming 
-	   offer acceptances (i.e. purchase orders) from buyer agents.
-	   The seller agent removes the purchased book from its catalogue 
-	   and replies with an INFORM message to notify the buyer that the
-	   purchase has been sucesfully completed.
-	 */
-	// Servidor de Pedidos de Compras
-	private class PurchaseOrdersServer extends CyclicBehaviour {
-
-		private static final long serialVersionUID = 1L;
-
-		public void action() {
-			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL);
-			ACLMessage msg = myAgent.receive(mt);
-			if (msg != null) {
-				// ACCEPT_PROPOSAL Message received. Process it
-				String title = msg.getContent();
-				ACLMessage reply = msg.createReply();
-
-				Integer price = 1;
-				if (price != null) {
-					reply.setPerformative(ACLMessage.INFORM);
-					System.out.println(title+" sold to agent "+msg.getSender().getName());
-				}
-				else {
-					// The requested book has been sold to another buyer in the meanwhile .
-					reply.setPerformative(ACLMessage.FAILURE);
-					reply.setContent("not-available");
-				}
-				myAgent.send(reply);
-			}
-			else {
-				block();
-			}
-		}
-	}  // End of inner class OfferRequestsServer
-	
-	
-	
-	/**
-    This is invoked by the GUI when the user adds a new book for sale
-	 */
-	public void updateCatalogue(final String title, final int price) {
-		addBehaviour(new OneShotBehaviour() {
-
-			private static final long serialVersionUID = 1L;
-
-			public void action() {
-				//catalogue.put(title, new Integer(price));
-				System.out.println(title+" inserted into catalogue. Price = "+price);
-			}
-		} );
 	}
+	
 	
 	
 	// Put agent clean-up operations here
@@ -199,9 +145,8 @@ public class DealerAgent extends Agent {
 				fe.printStackTrace();
 			}
 			// Close the GUI
-			myGui.dispose();
 			// Printout a dismissal message
-			System.out.println("Seller-agent "+getAID().getName()+" terminating.");
+			System.out.println("player "+getAID().getName()+" terminating.");
 		}
 }
 

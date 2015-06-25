@@ -8,6 +8,7 @@ public class Deck {
 	
 	public Deck(){
 		createDeck();
+		shuffleDeck();
 	}
 	
 	public void createDeck()
@@ -15,7 +16,7 @@ public class Deck {
 		cards = new Stack<Card>();
 		for(int deck_amount = 0; deck_amount < 6; deck_amount++ )
 		{
-			for(int card_value = 1; card_value < 14; card_value++)
+			for(int card_value = 1; card_value < 15; card_value++)
 			{
 				for(int card_suit = 0; card_suit < 4; card_suit++)
 				{
@@ -26,9 +27,9 @@ public class Deck {
 		}
 	}
 	
-	public void shuffle()
+	public void shuffleDeck()
 	{
-		for(int times = 0; times < 3; times++)
+		for(int times = 0; times < 10; times++)
 		{
 			Collections.shuffle(cards);
 		}
