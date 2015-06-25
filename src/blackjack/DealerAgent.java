@@ -1,3 +1,4 @@
+package blackjack;
 /*****************************************************************
 JADE - Java Agent DEvelopment Framework is a framework to develop 
 multi-agent systems in compliance with the FIPA specifications.
@@ -34,24 +35,24 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 
 import java.util.*;
 
-public class BookSellerAgent extends Agent {
+public class DealerAgent extends Agent {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	// The catalogue of books for sale (maps the title of a book to its price)
-	private Hashtable<String,Integer> catalogue;
+	// The deck of cards
+	private Deck deck;
 	// The GUI by means of which the user can add books in the catalogue
-	private BookSellerGui myGui;
+	private DealerGui myGui;
 
 	// Put agent initializations here
 	protected void setup() {
 		// Create the catalogue
-		catalogue = new Hashtable<String,Integer>();
+		deck = new Deck();
 
 		// Create and show the GUI 
-		myGui = new BookSellerGui(this);
-		myGui.showGui();
+		//myGui = new DealerGui(this);
+		//myGui.showGui();
 
 		// Register the book-selling service in the yellow pages
 		DFAgentDescription dfd = new DFAgentDescription();
@@ -66,14 +67,16 @@ public class BookSellerAgent extends Agent {
 		catch (FIPAException fe) {
 			fe.printStackTrace();
 		}
+		
+		printDeck();
+		
+		//addBehaviour(new tryPrintDeck());
 
 		// Add the behaviour serving queries from buyer agents
 		// Servidor de Requisi��es de Ofertas
-		addBehaviour(new OfferRequestsServer());
 
 		// Add the behaviour serving purchase orders from buyer agents
 		// Servidor de Pedidos de Compras
-		addBehaviour(new PurchaseOrdersServer());
 	}
 
 	/**
@@ -86,6 +89,19 @@ public class BookSellerAgent extends Agent {
 	 */
 	// Servidor de Requisi��es de Ofertas
 	//FIPA PROTOCOLS: http://www.fipa.org/specs/fipa00030/
+	
+	public void printDeck() {
+		addBehaviour(new OneShotBehaviour() {
+
+			private static final long serialVersionUID = 1L;
+
+			public void action() {
+				//catalogue.put(title, new Integer(price));
+				deck.printDeck();
+			}
+		} );
+	}
+	
 	private class OfferRequestsServer extends CyclicBehaviour {
 
 		private static final long serialVersionUID = 1L;
@@ -98,7 +114,7 @@ public class BookSellerAgent extends Agent {
 				String title = msg.getContent();
 				ACLMessage reply = msg.createReply();
 
-				Integer price = (Integer) catalogue.get(title);
+				Integer price = 1;
 				if (price != null) {
 					// The requested book is available for sale. Reply with the price
 					reply.setPerformative(ACLMessage.PROPOSE);
@@ -138,7 +154,7 @@ public class BookSellerAgent extends Agent {
 				String title = msg.getContent();
 				ACLMessage reply = msg.createReply();
 
-				Integer price = (Integer) catalogue.remove(title);
+				Integer price = 1;
 				if (price != null) {
 					reply.setPerformative(ACLMessage.INFORM);
 					System.out.println(title+" sold to agent "+msg.getSender().getName());
@@ -167,7 +183,7 @@ public class BookSellerAgent extends Agent {
 			private static final long serialVersionUID = 1L;
 
 			public void action() {
-				catalogue.put(title, new Integer(price));
+				//catalogue.put(title, new Integer(price));
 				System.out.println(title+" inserted into catalogue. Price = "+price);
 			}
 		} );

@@ -1,3 +1,4 @@
+package blackjack;
 /*****************************************************************
 JADE - Java Agent DEvelopment Framework is a framework to develop 
 multi-agent systems in compliance with the FIPA specifications.
@@ -32,17 +33,17 @@ import javax.swing.*;
 /**
   @author Giovanni Caire - TILAB
  */
-class BookSellerGui extends JFrame {	
+class DealerGui extends JFrame {	
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 
-	private BookSellerAgent myAgent;
+	private DealerAgent myAgent;
 	
 	private JTextField titleField, priceField;
 	
-	BookSellerGui(BookSellerAgent a) {
+	DealerGui(DealerAgent a) {
 		super(a.getLocalName());
 		
 		myAgent = a;
@@ -68,7 +69,7 @@ class BookSellerGui extends JFrame {
 					priceField.setText("");
 				}
 				catch (Exception e) {
-					JOptionPane.showMessageDialog(BookSellerGui.this, "Invalid values. "+e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE); 
+					JOptionPane.showMessageDialog(DealerGui.this, "Invalid values. "+e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE); 
 				}
 			}
 		} );
