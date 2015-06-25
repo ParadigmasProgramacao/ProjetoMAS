@@ -37,8 +37,6 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 
 import java.util.*;
 
-import examples.yellowPages.DFSearchAgent;
-import examples.yellowPages.DFSubscribeAgent;
 
 public class PlayerAgent extends Agent {
 	
@@ -62,9 +60,12 @@ public class PlayerAgent extends Agent {
 			fe.printStackTrace();
 		}
 		
+		//addBehaviour(new findTable());
+		
 		addBehaviour(new TickerBehaviour(this, 5000) {
 
 			private static final long serialVersionUID = 1L;
+			private MessageTemplate mt;
 
 			protected void onTick() {
 				// Update the list of seller agents
@@ -77,21 +78,15 @@ public class PlayerAgent extends Agent {
 					DFAgentDescription[] result = DFService.search(myAgent, template); 
 					agents = new AID[result.length];
 					
+					for (int i = 0; i < result.length; ++i) {
+						agents[i] = result[i].getName();
+						System.out.println(agents[i].getName());
+					}
+					
 					if(agents.length > 0)
 					{
-						System.out.println(myAgent.getLocalName() + " found a table");
-						
-						ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
-						cfp.setContent("place");
-						cfp.setConversationId("place-request");
-						cfp.setReplyWith("cfp"+System.currentTimeMillis());
-						//Enviar mensagem para as mesas ver se possui lugar para sentar
-						for(int i = 0; i <= agents.length ; i++)
-						{
-							cfp.addReceiver(agents[i]);
-							myAgent.send(cfp);
-							cfp.removeReceiver(agents[i]);
-						}
+						System.out.println(myAgent.getLocalName() + " found a table ");
+						myAgent.addBehaviour(new RequestSeat());
 					}
 				}
 				catch (FIPAException fe) {
@@ -100,7 +95,40 @@ public class PlayerAgent extends Agent {
 			}
 		} );
 		
+	}
+	
+	private class RequestSeat extends OneShotBehaviour {
 		
+		private static final long serialVersionUID = 1L;
+		private MessageTemplate mt;
+		
+		public void action() {
+			ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+			cfp.setContent("place");
+			cfp.setConversationId("place-request");
+			cfp.setReplyWith("cfp"+System.currentTimeMillis());
+			//Enviar mensagem para as mesas ver se possui lugar para sentar
+			for(int i = 0; i < agents.length ; i++)
+			{
+				cfp.addReceiver(agents[i]);
+				System.out.println("agente: " + agents[i].getName());
+			}
+			myAgent.send(cfp);
+			mt = MessageTemplate.and(MessageTemplate.MatchConversationId("place-request"),
+					MessageTemplate.MatchInReplyTo(cfp.getReplyWith()));
+			ACLMessage reply = myAgent.receive(mt);
+			if (reply != null) {
+				// Recebeu a resposta
+				if (reply.getPerformative() == ACLMessage.CONFIRM) {
+					//ta falando que tem lugar
+					System.out.println(reply.getSender() + " tem lugar vazio");
+				}
+				else
+				{
+					System.out.println(reply.getSender()+ "nao tem lugar vazio");
+				}
+			}
+		}
 	}
 
 	/**
@@ -117,30 +145,48 @@ public class PlayerAgent extends Agent {
 	private class findTable extends CyclicBehaviour {
 
 		private static final long serialVersionUID = 1L;
+		private MessageTemplate mt;
 
 		public void action() {
-			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.CFP);
-			ACLMessage msg = myAgent.receive(mt);
-			if (msg != null) {
-				// CFP Message received. Process it
-				String title = msg.getContent();
-				ACLMessage reply = msg.createReply();
-
-				Integer price = 1;
-				if (price != null) {
-					// The requested book is available for sale. Reply with the price
-					reply.setPerformative(ACLMessage.PROPOSE);
-					reply.setContent(String.valueOf(price.intValue()));
+			// Update the list of seller agents
+			DFAgentDescription template = new DFAgentDescription();
+			ServiceDescription sd = new ServiceDescription();
+			sd.setType("blackjack");
+			sd.setName("table");
+			template.addServices(sd);
+			try {
+				DFAgentDescription[] result = DFService.search(myAgent, template); 
+				agents = new AID[result.length];
+				
+				if(agents.length > 0)
+				{
+					System.out.println(myAgent.getLocalName() + " found a table");
+					
+					ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+					cfp.setContent("place");
+					cfp.setConversationId("place-request");
+					cfp.setReplyWith("cfp"+System.currentTimeMillis());
+					//Enviar mensagem para as mesas ver se possui lugar para sentar
+					for(int i = 0; i < agents.length ; i++)
+					{
+						cfp.addReceiver(agents[i]);
+						myAgent.send(cfp);
+						cfp.removeReceiver(agents[i]);
+					}
+					mt = MessageTemplate.and(MessageTemplate.MatchConversationId("place-request"),
+							MessageTemplate.MatchInReplyTo(cfp.getReplyWith()));
+					ACLMessage reply = myAgent.receive(mt);
+					if (reply != null) {
+						// Recebeu a resposta
+						if (reply.getPerformative() == ACLMessage.CONFIRM) {
+							//ta falando que tem lugar
+							System.out.println(reply.getSender() + " tem lugar vazio");
+						}
+					}
 				}
-				else {
-					// The requested book is NOT available for sale.
-					reply.setPerformative(ACLMessage.REFUSE);
-					reply.setContent("not-available");
-				}
-				myAgent.send(reply);
 			}
-			else {
-				block();
+			catch (FIPAException fe) {
+				fe.printStackTrace();
 			}
 		}
 	}

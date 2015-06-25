@@ -69,6 +69,7 @@ public class TableAgent extends Agent {
 	}
 	
 	private class newPlayer extends CyclicBehaviour {
+		
 		private static final long serialVersionUID = 1L;
 		
 		public void action() {
