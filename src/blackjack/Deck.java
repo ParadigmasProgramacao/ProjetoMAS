@@ -3,7 +3,7 @@ import java.util.Collections;
 import java.util.Stack;
 
 public class Deck {
-	private Stack<Card> cards;
+	public Stack<Card> cards;
 	
 	
 	public Deck(){

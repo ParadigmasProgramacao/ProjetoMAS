@@ -40,17 +40,14 @@ public class TableAgent extends Agent {
 
 	private static final long serialVersionUID = 1L;
 	private int seats;
-	private AID dealer;
+	private Deck deck;
+	private List<Card> cards;
 	private List<AID> players;
 	
 
 	// Put agent initializations here
 	protected void setup() {
-		// Create the catalogue
-
-		// Create and show the GUI 
-		//myGui = new DealerGui(this);
-		//myGui.showGui();
+		
 
 		// Register the dealer service in the yellow pages
 		DFAgentDescription dfd = new DFAgentDescription();
@@ -65,9 +62,50 @@ public class TableAgent extends Agent {
 		catch (FIPAException fe) {
 			fe.printStackTrace();
 		}
+		cards = new ArrayList<Card>();
 		players = new ArrayList<AID>();
+		deck = new Deck();
 		
 		addBehaviour(new newPlayer());
+		addBehaviour(new Game());
+	}
+	
+	private class GiveCard extends OneShotBehaviour {
+		private static final long serialVersionUID = 1L;
+		private Card card;
+		private AID player;
+		
+		public GiveCard(AID player, Card card){
+			this.card = card;
+			this.player = player;
+		}
+		
+		public void action() {
+			System.out.println("Distribuindo carta " + card.get_rank()+card.get_suit() + " para o " + player.getLocalName());
+		}
+	}
+
+	
+	private class Game extends CyclicBehaviour {
+		private static final long serialVersionUID = 1L;
+		
+		public void action() {
+			if(players.size() > 0)
+			{
+				for(int repeticoes = 0; repeticoes < 2; repeticoes ++)
+				{
+					for(int qntPlayer = 0; qntPlayer < players.size(); qntPlayer++)
+					{
+						addBehaviour(new GiveCard(players.get(qntPlayer), deck.cards.pop()));
+					}
+				}
+				addBehaviour(new GiveCard(myAgent.getAID(), deck.cards.pop()));
+			}
+			else
+			{
+				block();
+			}
+		}
 	}
 	
 	private class ListPlayers extends OneShotBehaviour {

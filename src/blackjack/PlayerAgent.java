@@ -43,9 +43,14 @@ public class PlayerAgent extends Agent {
 	private static final long serialVersionUID = 1L;
 	private AID[] agents;
 	private AID table;
+	private List<Card> hand;
 
 	// Put agent initializations here
 	protected void setup() {
+		table = new AID();
+		table.setLocalName("none");
+		
+		hand = new ArrayList<Card>();
 
 		// Register the dealer service in the yellow pages
 		DFAgentDescription dfd = new DFAgentDescription();
@@ -61,8 +66,7 @@ public class PlayerAgent extends Agent {
 			fe.printStackTrace();
 		}
 		
-		table = new AID();
-		table.setLocalName("none");
+		
 		
 		//addBehaviour(new findTable());
 		
