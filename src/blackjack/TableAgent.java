@@ -105,7 +105,51 @@ public class TableAgent extends Agent {
 			}
 			else
 			{
+				for(int qntPlayer = 0; qntPlayer < players.size(); qntPlayer++)
+				{
+					addBehaviour(new PlayerTurn(players.get(qntPlayer)));
+				}
 				block();
+			}
+		}
+	}
+	
+	private class PlayerTurn extends CyclicBehaviour {
+		private static final long serialVersionUID = 1L;
+		private AID player;
+		
+		public PlayerTurn(AID player){
+			this.player = player;
+		}
+
+		public void action() {
+			// Porque msg está nula????
+			MessageTemplate mt = MessageTemplate.and(MessageTemplate.MatchPerformative(ACLMessage.CFP), 
+					MessageTemplate.MatchConversationId("my-turn"));
+			ACLMessage msg = myAgent.receive(mt);
+			
+			if(msg != null) {
+				ACLMessage reply = msg.createReply();
+				System.out.println("Mensagem de jogada... " + msg.getContent());
+				if (msg.getContent() == "my-turn"){
+					reply.setPerformative(ACLMessage.CONFIRM);
+					reply.setContent("available");
+				} else {
+					reply.setPerformative(ACLMessage.REFUSE);
+					reply.setContent("not-available");
+				}
+				myAgent.send(reply);
+			} else {
+				MessageTemplate mt2 = MessageTemplate.and(MessageTemplate.MatchPerformative(ACLMessage.INFORM), 
+						MessageTemplate.MatchConversationId("trying-to-play-again"));
+				ACLMessage newReply = myAgent.receive(mt2);
+				
+				
+				if(newReply != null) {
+					System.out.println("Nova tentativa de jogada... " + newReply.getContent());
+				} else {
+					block();
+				}
 			}
 		}
 	}
@@ -136,7 +180,6 @@ public class TableAgent extends Agent {
 				//ACLMessage reply = msg.createReply();
 				//reply.setContent(msg.getContent());
 				System.out.println("Recebendo mensagem... " + msg.getContent());
-				System.out.println("Numero de jogadores: " + players.size());
 				ACLMessage reply = msg.createReply();
 				if(players.size() < 5)
 				{
@@ -159,6 +202,7 @@ public class TableAgent extends Agent {
 				if(newReply != null)
 				{
 					players.add(newReply.getSender());
+					System.out.println("Numero de jogadores: " + players.size());
 					addBehaviour(new ListPlayers());
 				}
 				else
@@ -179,7 +223,6 @@ public class TableAgent extends Agent {
 			catch (FIPAException fe) {
 				fe.printStackTrace();
 			}
-
 			// Printout a dismissal message
 			System.out.println("Table-agent "+getAID().getName()+" terminating.");
 		}

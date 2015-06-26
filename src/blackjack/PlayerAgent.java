@@ -44,6 +44,7 @@ public class PlayerAgent extends Agent {
 	private AID[] agents;
 	private AID table;
 	private List<Card> hand;
+	Scanner scanner = new Scanner(System.in);
 
 	// Put agent initializations here
 	protected void setup() {
@@ -65,10 +66,6 @@ public class PlayerAgent extends Agent {
 		catch (FIPAException fe) {
 			fe.printStackTrace();
 		}
-		
-		
-		
-		//addBehaviour(new findTable());
 		
 		addBehaviour(new TickerBehaviour(this, 5000) {
 
@@ -102,6 +99,7 @@ public class PlayerAgent extends Agent {
 						System.out.println(myAgent.getLocalName() + " found a table ");
 						myAgent.addBehaviour(new RequestSeat());
 						myAgent.addBehaviour(new CanSit());
+						myAgent.addBehaviour(new CanPlay());
 					}
 				}
 				catch (FIPAException fe) {
@@ -110,6 +108,33 @@ public class PlayerAgent extends Agent {
 			}
 		} );
 	
+	}
+	
+	private class CanPlay extends OneShotBehaviour {
+		private static final long serialVersionUID = 1L;
+		private MessageTemplate mt;
+		
+		public void action() {
+			mt = MessageTemplate.MatchConversationId("my-turn");
+			ACLMessage reply = myAgent.receive(mt);
+			if (reply != null) {
+				System.out.println("Chega no if?");
+				if (reply.getPerformative() == ACLMessage.CONFIRM) {
+					System.out.println("O que deseja fazer?");
+					String response = scanner.next();
+					table = reply.getSender();
+					ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+					msg.addReceiver(reply.getSender());
+					msg.setContent("is-playing");
+					msg.setConversationId(response);
+					msg.setReplyWith("msg"+System.currentTimeMillis());
+					myAgent.send(msg);
+				}
+			} else {
+				System.out.println("Chega no else?");
+				block();
+			}
+		}
 	}
 	
 	private class CanSit extends CyclicBehaviour {
