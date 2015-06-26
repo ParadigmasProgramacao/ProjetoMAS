@@ -35,6 +35,10 @@ import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 
+
+
+
+
 import java.util.*;
 
 
@@ -44,6 +48,8 @@ public class PlayerAgent extends Agent {
 	private AID[] agents;
 	private AID table;
 	private List<Card> hand;
+	private PlayerGui myGui;
+	private PlayerAgent myself = this;
 
 	// Put agent initializations here
 	protected void setup() {
@@ -111,6 +117,45 @@ public class PlayerAgent extends Agent {
 		} );
 	
 	}
+	public void updateCatalogue(final String title, final int price) {
+		addBehaviour(new OneShotBehaviour() {
+
+			private static final long serialVersionUID = 1L;
+
+			public void action() {
+				//catalogue.put(title, new Integer(price));
+				System.out.println(title+" inserted into catalogue. Price = "+price);
+			}
+		} );
+	}
+	
+	public String resposta(final String resp) {
+		return resp;
+	}
+	
+	private class MyTurn extends CyclicBehaviour {
+		private static final long serialVersionUID = 1L;
+		private MessageTemplate mt;
+		
+		public void action() {
+			mt = MessageTemplate.MatchConversationId("another-card");
+			ACLMessage msg = myAgent.receive(mt);
+			
+			if (msg != null) {
+				if(msg.getPerformative() == ACLMessage.PROPOSE)
+				{
+					System.out.println("recebeu proposta, pediu nova carta");
+					myGui = new PlayerGui(myself);
+					myGui.showGui();
+					
+					ACLMessage reply = msg.createReply();
+					reply.setPerformative(ACLMessage.CONFIRM);
+					//sreply.setContent(opcao);
+					myAgent.send(reply);
+				}
+			}
+		}
+	}
 	
 	private class CanSit extends CyclicBehaviour {
 		private static final long serialVersionUID = 1L;
@@ -131,6 +176,8 @@ public class PlayerAgent extends Agent {
 					msg.setConversationId("occupying-place");
 					msg.setReplyWith("msg"+System.currentTimeMillis());
 					myAgent.send(msg);
+					
+					addBehaviour(new MyTurn());
 				}
 			}
 			else
