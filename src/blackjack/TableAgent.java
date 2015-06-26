@@ -43,6 +43,7 @@ public class TableAgent extends Agent {
 	private Deck deck;
 	private List<Card> cards;
 	private List<AID> players;
+	private boolean has_distributed = false;
 	
 
 	// Put agent initializations here
@@ -90,7 +91,7 @@ public class TableAgent extends Agent {
 		private static final long serialVersionUID = 1L;
 		
 		public void action() {
-			if(players.size() > 0)
+			if(players.size() > 0 && has_distributed == false)
 			{
 				for(int repeticoes = 0; repeticoes < 2; repeticoes ++)
 				{
@@ -100,6 +101,7 @@ public class TableAgent extends Agent {
 					}
 				}
 				addBehaviour(new GiveCard(myAgent.getAID(), deck.cards.pop()));
+				has_distributed = true;
 			}
 			else
 			{
